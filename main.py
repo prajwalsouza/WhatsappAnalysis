@@ -51,7 +51,7 @@ for msg in msglist:
 
 print("Top five most active members:")
 sortedmembers = sorted(memberstats.items(), key=operator.itemgetter(1), reverse=True)
-for member in sortedmembers[0:4]:
+for member in sortedmembers[0:5]:
 	print(member[0]+" : "+str(member[1]) )
 
 print("")
