@@ -1,12 +1,11 @@
 import re
 import operator
 
-
 #opening the file
 
 from Tkinter import Tk
 from tkFileDialog import askopenfilename
-
+print(" Select the text file.")
 Tk().withdraw()  #Tkinter dialog box helps select the file
 
 filename = askopenfilename() 
@@ -15,7 +14,8 @@ infile = open(filename, 'r')
 
 print(" File Selected : %s" % filename) 
 
-msglist=[]		#this list will contain dictionary of each message
+msglist=[]		
+#this list will contain dictionary of each message
 
 badwords=[
 re.compile('^\d?\d/\d?\d/\d\d, \d?\d:\d?\d \w\w .* was added$'),
@@ -56,7 +56,7 @@ print("")
 
 #Find a Phrase 
 
-findword = ["Happy Birthday"]
+findword = ["Happy Birthday",'happy bday',"happy b'day"]
 
 wordcount = 0
 
@@ -67,30 +67,30 @@ for msg in msglist:
 		nphrases=re.findall(phrase,msg['message'],re.IGNORECASE)
 
 
-	if(nphrases):
-		wordcount+=len(nphrases)
-		nwords = re.search(phrase + r'\W(\w+)',msg['message'],re.IGNORECASE)
-		if nwords:
-			word = {}
-			word['index'] = msg['index']
-			word['date'] = msg['date']
-			word['month'] = msg['month']
-			word['year'] = msg['year']
-			word['time'] = msg['time']
-			word['sender'] = msg['sender']
-			word['associated word'] = nwords.group(1)
-			wordlist.append(word)
+		if(nphrases):
+			wordcount+=len(nphrases)
+			nwords = re.search(phrase + r'\W(\w+)',msg['message'],re.IGNORECASE)
+			if nwords:
+				word = {}
+				word['index'] = msg['index']
+				word['date'] = msg['date']
+				word['month'] = msg['month']
+				word['year'] = msg['year']
+				word['time'] = msg['time']
+				word['sender'] = msg['sender']
+				word['associated word'] = nwords.group(1)
+				wordlist.append(word)
 
     
-print(" Number of phrases : %d." % wordcount)
+print(" Number of phrases containing 'Happy Birthday' : %d." % wordcount)
 
 
 # Removing Duplicates using difflib
 import difflib
 
-wishthreshold = 2 #The minimum number of wishes that confirm a birthday.
+wishthreshold = 1 #The minimum number of wishes that confirm a birthday.
 
-wordfilter = ['to','bro','dude','boss','babe','bebe','dear','maam','maams','both']
+wordfilter = ['to','bro','dude','boss','babe','bebe','dear','maam','maams','both','guys','buddy','buddies','dea','once','again']
 
 
 
@@ -104,13 +104,13 @@ for worditem in wordlist:
 	else:
 		awordfreq[worditem['associated word']]=1
 
-adatefreq={}
+datefreq={}
 #We find the frequency with which each word with a given date repeats
 for worditem in wordlist:
-	if worditem['associated word']+worditem['date']+worditem['month'] in adatefreq:
-		adatefreq[worditem['associated word']+worditem['date']+worditem['month']]+=1
+	if worditem['associated word'] in datefreq:
+		datefreq[worditem['associated word']+worditem['date']+worditem['month']]+=1
 	else:
-		adatefreq[worditem['associated word']+worditem['date']+worditem['month']]=1
+		datefreq[worditem['associated word']+worditem['date']+worditem['month']]=1
 
 
 #Finds possible duplicates and deletes them.
@@ -122,28 +122,18 @@ for worditem1,worditem2 in itertools.combinations(wordlist, 2):
 		month1 = worditem1['month']
 		date2 = worditem2['date']
 		month2 = worditem2['month']	
-		if(date1 == date2 and month1 == month2  and difflib.SequenceMatcher(None,associatedword1.lower(),associatedword2.lower()).ratio() > 0.3 and awordfreq[associatedword1] <= 1 and awordfreq[associatedword2] <= 1):
-			if(awordfreq[associatedword1] >= awordfreq[associatedword2]):
+		if(date1 == date2 and month1 == month2 and difflib.SequenceMatcher(None,associatedword1.lower(),associatedword2.lower()).ratio() > 0.3 and associatedword1[0].lower() == associatedword2[0].lower()):
+			if worditem2 in wordlist:
+				wordlist.remove(worditem2)
+				if(associatedword1 != associatedword2):
+					awordfreq[associatedword1] = awordfreq[associatedword1] + awordfreq[associatedword2] 
+		if(associatedword1.lower() == associatedword2.lower() and (date1 != date2 or month1 != month2)):
+			if(datefreq[associatedword1+date1+month1] >= datefreq[associatedword2+date2+month2]):
 				if worditem2 in wordlist:
 					wordlist.remove(worditem2)
-					print("Deleted 1 %s" % associatedword2)
-					if(associatedword1 != associatedword2):
-						awordfreq[associatedword1] = awordfreq[associatedword1] + awordfreq[associatedword2] 
-			if(awordfreq[associatedword1] < awordfreq[associatedword2]):
+			if(datefreq[associatedword1+date1+month1] < datefreq[associatedword2+date2+month2]):
 				if worditem1 in wordlist:
 					wordlist.remove(worditem1)
-					print("Deleted 2 %s" % associatedword1)
-					if(associatedword1 != associatedword2):
-						awordfreq[associatedword2] = awordfreq[associatedword1] + awordfreq[associatedword2] 
-		if(difflib.SequenceMatcher(None,associatedword1.lower(),associatedword2.lower()).ratio() > 0.6):
-			if(adatefreq[associatedword1+date1+month1] >= adatefreq[associatedword2+date2+month2]):
-				if worditem2 in wordlist:
-					wordlist.remove(worditem2)
-					print("Deleted 3 %s" % associatedword2)
-			if(adatefreq[associatedword1+date1+month1] < adatefreq[associatedword2+date2+month2]):
-				if worditem1 in wordlist:
-					wordlist.remove(worditem1)
-					print("Deleted  4 %s" % associatedword2)
 	if associatedword2.lower() in wordfilter:
 		if worditem2 in wordlist:
 				wordlist.remove(worditem2)
@@ -170,6 +160,15 @@ for worditem1,worditem2 in itertools.combinations(wordlist, 2):
 				print("Deleted 10 %s" % associatedword1)
     
 
+#Above are many filters that remove the duplicates
+#1st is a Duplicate names filter, eliminating birthdays on same date
+#2nd is a Duplicate Date Filter, deleting birthdays with same name by different dates, but, finding the date on which the person got the highest wishes
+#3rd is a Bad word filter eliminating words such as Dear, Buddy etc.
+#4th is a Small name filter, eliminating names with only two letters (Can be removed if necessary)
+#5th is a Wish Filter eliminating those names that get lesser wishes than the wishthreshold states.
+
+
+
 # We print the data we acquired
 
 from datetime import date
@@ -183,8 +182,8 @@ for worditem in wordlist:
 	forstringassociatedword = associatedword[:1] .upper() + associatedword[1:].lower()
 	stringdate = date(day=int(worddate), month=int(wordmonth), year=2016).strftime('%d %B')
 
-	for word in findword:
-		print(" %s celebrates birthday on %s and got atleast %d wishes." % (forstringassociatedword,stringdate,awordfreq[associatedword]))
+	print(" %s celebrates birthday on %s and got atleast %d wishes." % (forstringassociatedword,stringdate,awordfreq[associatedword]))
 
 print("")
 print(" Number of Birthdays found : %d." % len(wordlist))
+
