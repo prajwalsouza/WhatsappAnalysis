@@ -88,7 +88,7 @@ print(" Number of phrases containing 'Happy Birthday' : %d." % wordcount)
 # Removing Duplicates using difflib
 import difflib
 
-wishthreshold = 1 #The minimum number of wishes that confirm a birthday.
+wishthreshold = 2 #The minimum number of wishes that confirm a birthday. # Works better for a value of 2
 
 wordfilter = ['to','bro','dude','boss','babe','bebe','dear','maam','maams','both','guys','buddy','buddies','dea','once','again']
 
